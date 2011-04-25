@@ -11,3 +11,5 @@
 
 # Ignore objects and archives.
 #*.[oa]
+bin-debug/
+bin-release/
