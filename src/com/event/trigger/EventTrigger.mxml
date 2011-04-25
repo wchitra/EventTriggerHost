@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application	xmlns:mx="http://www.adobe.com/2006/mxml"	    			   
+			   applicationComplete="start()"
+			   width="100%" height="100%">
+	<mx:Metadata>
+		[ResourceBundle("duration")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import com.event.trigger.service.RestService;
+			import com.event.trigger.util.ResourceUtil;
+			
+			import mx.controls.SWFLoader;
+			import mx.core.MovieClipLoaderAsset;
+			import mx.events.FlexEvent;
+			
+			private static const BASE_URL:String = "http://localhost:20081/";
+			private static const START_AD_PLAY_URL:String = BASE_URL + "startadplay";
+			private static const STOP_AD_PLAY_URL:String = BASE_URL + "stopadplay";
+			
+			[Embed('./media/DOmediaPoweredByVukunetLogomedium.jpg')]
+			private var media:Class;
+			
+			private var timer:Timer = null;
+			
+			public function start():void {
+				removeEventListener(FlexEvent.APPLICATION_COMPLETE, start);
+				startAdPlay();
+				playMedia();
+			}
+			
+			private function playMedia():void {
+				 swfAsset.load( media );
+//				swfAsset.source = media;
+			}
+			
+			private function stopMedia( event:Event ):void {
+				if( swfAsset.content is MovieClipLoaderAsset ) {
+					(swfAsset.content as MovieClipLoaderAsset).stop();
+					
+					SoundMixer.stopAll();
+					swfAsset.unloadAndStop( false );
+					swfAsset.source = null;
+					swfAsset.load( null );
+				}
+				
+//				SoundMixer.stopAll();
+//				
+//				swfAsset.unloadAndStop( false );
+//				swfAsset.source = null;
+//				swfAsset.load( null );
+				
+//				fscommand("quit");
+			}
+			
+			private function startAdPlay():void {
+				var duration:String = ResourceUtil.getDuration();
+				var startDurationCommand:String = START_AD_PLAY_URL + "/" + duration;
+				RestService.instance.callRestService( startDurationCommand );
+				
+				timer = new Timer( (parseInt( duration ) * 1000), 1 );
+				timer.start();
+				timer.addEventListener(TimerEvent.TIMER, stopAdPlay );
+			}
+			
+			private function stopAdPlay( event:TimerEvent ):void {
+				RestService.instance.callRestService( STOP_AD_PLAY_URL );
+				RestService.instance.closeUrlLoader();
+				
+				timer.removeEventListener(TimerEvent.TIMER, stopAdPlay);
+				stopMedia( null );
+			}
+		]]>
+	</mx:Script>
+	
+	
+	<mx:VBox id="mediaContent" height="100%" width="100%">
+		<mx:SWFLoader id="swfAsset" height="100%" width="100%"
+					  maintainAspectRatio="true" scaleContent="true" autoLoad="true"
+					  horizontalCenter="0" verticalCenter="0" horizontalAlign="center" verticalAlign="middle" />
+	</mx:VBox>
+</mx:Application>
